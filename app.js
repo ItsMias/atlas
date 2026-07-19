@@ -1,0 +1,277 @@
+/* SurDex Game Atlas — vanilla JS. World is 1800×1620; pan/zoom via transform on #world. */
+(() => {
+  const TINT = {
+    "micro": "var(--a1)", "macro": "var(--a2)", "meso": "var(--a3)",
+    "micro-macro": "color-mix(in oklab, var(--a1) 50%, var(--a2))",
+    "micro-meso": "color-mix(in oklab, var(--a1) 50%, var(--a3))",
+    "meso-macro": "color-mix(in oklab, var(--a2) 50%, var(--a3))",
+    "center": "var(--hi)",
+  };
+  const ICON_PX = 44, W = 1800, H = 1620;
+  const vp = document.getElementById("viewport");
+  const world = document.getElementById("world");
+  const iconsEl = document.getElementById("icons");
+  const dimEl = document.getElementById("dim");
+  const cardMount = document.getElementById("card-mount");
+  const searchEl = document.getElementById("search");
+  const matchesEl = document.getElementById("matches");
+  const introEl = document.getElementById("intro");
+
+  let tx = 60, ty = 40, sc = 0.55, sel = null, moved = 0;
+
+  // ---------- helpers ----------
+  const hash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return Math.abs(h); };
+  const badgeBg = (n) => "hsl(" + (hash(n) % 360) + ", 42%, 40%)";
+  const initials = (n) => {
+    const w = n.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).filter(Boolean);
+    if (!w.length) return "?";
+    if (w.length === 1) return w[0].slice(0, 2).toUpperCase();
+    return (w[0][0] + w[1][0]).toUpperCase();
+  };
+
+  // ---------- layout: even-fill disc packing per Venn region ----------
+  const CTR = { A: [660, 590], B: [1140, 590], C: [900, 1000] }, R = 520;
+  const dist = (x, y, c) => Math.hypot(x - c[0], y - c[1]);
+  const ZC = {
+    "micro": [["A"], ["B", "C"]], "macro": [["B"], ["A", "C"]], "meso": [["C"], ["A", "B"]],
+    "micro-macro": [["A", "B"], ["C"]], "micro-meso": [["A", "C"], ["B"]], "meso-macro": [["B", "C"], ["A"]],
+    "center": [["A", "B", "C"], []],
+  };
+  const clear = (r) => (x, y) => {
+    let d = Infinity;
+    ZC[r][0].forEach((k) => { d = Math.min(d, R - dist(x, y, CTR[k])); });
+    ZC[r][1].forEach((k) => { d = Math.min(d, dist(x, y, CTR[k]) - R); });
+    return d;
+  };
+  const incenters = {};
+  for (const r of Object.keys(ZC)) {
+    const f = clear(r);
+    let best = [900, 800], bd = -Infinity;
+    for (let x = 100; x <= 1700; x += 12) for (let y = 60; y <= 1560; y += 12) { const d = f(x, y); if (d > bd) { bd = d; best = [x, y]; } }
+    for (let x = best[0] - 12; x <= best[0] + 12; x += 1) for (let y = best[1] - 12; y <= best[1] + 12; y += 1) { const d = f(x, y); if (d > bd) { bd = d; best = [x, y]; } }
+    incenters[r] = best;
+  }
+  const rnd = (i, j, k) => { let h = (i * 374761393 + j * 668265263 + k * 987654323) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return (((h ^ (h >>> 16)) >>> 0) % 1000) / 1000 - 0.5; };
+  function layout(list, px) {
+    const byR = {};
+    list.forEach((g) => { (byR[g.r] = byR[g.r] || []).push(g); });
+    const out = [];
+    for (const r of Object.keys(ZC)) {
+      const games = byR[r] || [];
+      if (!games.length) continue;
+      const f = clear(r), n = games.length, G = incenters["center"];
+      let e = Math.round(px * 0.45), seeds = [];
+      for (; e >= 3; e -= 4) {
+        const t = px + e, t2 = t * t, margin = px / 2 + e;
+        const cells = [];
+        for (let y = 60; y <= 1560; y += 7) for (let x = 100; x <= 1700; x += 7) {
+          if (f(x, y) >= margin) cells.push([x, y, Math.hypot(x - G[0], y - G[1]) + rnd(x, y, 5) * 4]);
+        }
+        cells.sort((a, b) => a[2] - b[2]);
+        seeds = [];
+        for (const c of cells) {
+          let ok = true;
+          for (const s of seeds) { const dx = c[0] - s[0], dy = c[1] - s[1]; if (dx * dx + dy * dy < t2) { ok = false; break; } }
+          if (ok) { seeds.push([c[0], c[1]]); if (seeds.length >= n) break; }
+        }
+        if (seeds.length >= n) break;
+      }
+      if (!seeds.length) seeds = games.map(() => incenters[r].slice());
+      games.forEach((gm, i) => {
+        const p = seeds[Math.min(i, seeds.length - 1)];
+        out.push(Object.assign({}, gm, { x: Math.round(p[0]), y: Math.round(p[1]), yr: gm.y }));
+      });
+    }
+    return out;
+  }
+
+  // ---------- pan / zoom ----------
+  function apply(anim) {
+    world.style.transition = anim ? "transform 0.7s cubic-bezier(0.22, 0.9, 0.3, 1)" : "none";
+    world.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + sc + ")";
+    positionCard();
+  }
+  function fit() {
+    const r = vp.getBoundingClientRect();
+    const availH = r.height - 158;
+    sc = Math.min(r.width / W, availH / H) * 0.98;
+    tx = (r.width - W * sc) / 2;
+    ty = 84 + (availH - H * sc) / 2;
+    apply(false);
+  }
+  vp.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = vp.getBoundingClientRect();
+    const f = Math.exp(-e.deltaY * 0.0012);
+    const s2 = Math.max(0.3, Math.min(4.5, sc * f));
+    const k = s2 / sc;
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    tx = mx - (mx - tx) * k; ty = my - (my - ty) * k; sc = s2;
+    apply(false);
+  }, { passive: false });
+  vp.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    moved = 0;
+    const sx = e.clientX, sy = e.clientY, ox = tx, oy = ty;
+    const mv = (ev) => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      moved = Math.max(moved, Math.abs(dx) + Math.abs(dy));
+      if (moved > 3) { tx = ox + dx; ty = oy + dy; vp.classList.add("dragging"); apply(false); }
+    };
+    const up = () => {
+      window.removeEventListener("mousemove", mv);
+      window.removeEventListener("mouseup", up);
+      vp.classList.remove("dragging");
+    };
+    window.addEventListener("mousemove", mv);
+    window.addEventListener("mouseup", up);
+  });
+  vp.addEventListener("click", () => { if (moved < 4) closeCard(); });
+  window.addEventListener("resize", fit);
+
+  // ---------- icons ----------
+  const laid = layout(GAMES, ICON_PX);
+  const iconEls = new Map();
+  laid.forEach((g) => {
+    const el = document.createElement("div");
+    el.className = "icon";
+    el.title = g.n;
+    el.style.left = g.x + "px";
+    el.style.top = g.y + "px";
+    el.appendChild(makeBadge(g, "badge"));
+    el.addEventListener("click", (e) => { e.stopPropagation(); openCard(g); });
+    iconsEl.appendChild(el);
+    iconEls.set(g.n, el);
+  });
+  function makeBadge(g, cls) {
+    const b = document.createElement("div");
+    b.className = cls;
+    if (g.icon) {
+      const im = document.createElement("img");
+      im.src = g.icon;
+      im.alt = g.n;
+      b.appendChild(im);
+    } else {
+      b.style.background = badgeBg(g.n);
+      b.textContent = initials(g.n);
+    }
+    return b;
+  }
+
+  // ---------- detail card ----------
+  function openCard(g) {
+    sel = g;
+    iconEls.forEach((el, n) => el.classList.toggle("sel", n === g.n));
+    dimEl.hidden = false;
+    cardMount.innerHTML = "";
+    const card = document.createElement("div");
+    card.className = "card";
+    card.addEventListener("click", (e) => e.stopPropagation());
+    card.addEventListener("mousedown", (e) => e.stopPropagation());
+    const hero = document.createElement("div");
+    hero.className = "card-hero";
+    if (g.hero) {
+      hero.style.background = "url('" + g.hero + "') center / cover no-repeat";
+    } else {
+      hero.style.background = "linear-gradient(180deg, color-mix(in oklab, " + (TINT[g.r] || "var(--hi)") + " 32%, transparent), transparent 95%), repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 9px, transparent 9px 18px)";
+      const note = document.createElement("span");
+      note.className = "hero-note";
+      note.textContent = "HERO IMAGE \u00b7 VIA API";
+      hero.appendChild(note);
+    }
+    const close = document.createElement("button");
+    close.className = "card-close";
+    close.setAttribute("aria-label", "Close");
+    close.innerHTML = '<svg width="10" height="10" viewBox="0 0 12 12"><path d="M2.5 2.5 L9.5 9.5 M9.5 2.5 L2.5 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg>';
+    close.addEventListener("click", (e) => { e.stopPropagation(); closeCard(); });
+    hero.appendChild(close);
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const row = document.createElement("div");
+    row.className = "card-title-row";
+    row.appendChild(makeBadge(g, "card-badge"));
+    const name = document.createElement("div");
+    name.className = "card-name";
+    name.textContent = g.n;
+    row.appendChild(name);
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    meta.textContent = g.yr + " \u00b7 " + REGIONS[g.r];
+    const desc = document.createElement("div");
+    desc.className = "card-desc";
+    desc.textContent = g.t;
+    body.append(row, meta, desc);
+    card.append(hero, body);
+    cardMount.appendChild(card);
+    positionCard();
+  }
+  function positionCard() {
+    const card = cardMount.firstChild;
+    if (!card || !sel) return;
+    const cardScale = Math.min(2.2, Math.max(0.5, 1 / sc)) * 1.15;
+    const gap = 46, cardW = 320 * cardScale, cardH = 330 * cardScale;
+    const vpr = vp.getBoundingClientRect();
+    const fitsRight = tx + (sel.x + gap) * sc + cardW * sc <= vpr.width - 10;
+    const fitsLeft = tx + (sel.x - gap) * sc - cardW * sc >= 10;
+    const flip = !fitsRight && fitsLeft;
+    const fitsDown = ty + sel.y * sc + cardH * sc <= vpr.height - 10;
+    const fitsUp = ty + sel.y * sc - cardH * sc >= 10;
+    const up = !fitsDown && fitsUp;
+    card.style.left = (flip ? sel.x - gap - 320 : sel.x + gap) + "px";
+    card.style.top = (up ? sel.y - 300 : sel.y - 22) + "px";
+    card.style.transformOrigin = (up ? "bottom" : "top") + " " + (flip ? "right" : "left");
+    card.style.transform = "scale(" + cardScale + ")";
+  }
+  function closeCard() {
+    sel = null;
+    cardMount.innerHTML = "";
+    dimEl.hidden = true;
+    iconEls.forEach((el) => el.classList.remove("sel"));
+  }
+
+  // ---------- search ----------
+  let matches = [];
+  function renderSearch() {
+    const q = searchEl.value.trim().toLowerCase();
+    iconEls.forEach((el, n) => el.classList.toggle("dimmed", !!q && !n.toLowerCase().includes(q)));
+    matches = q ? laid.filter((g) => g.n.toLowerCase().includes(q)).slice(0, 7) : [];
+    matchesEl.hidden = !matches.length;
+    matchesEl.innerHTML = "";
+    matches.forEach((g) => {
+      const m = document.createElement("div");
+      m.className = "match";
+      m.appendChild(makeBadge(g, "match-badge"));
+      const nm = document.createElement("div");
+      nm.className = "match-name";
+      nm.textContent = g.n;
+      const rg = document.createElement("div");
+      rg.className = "match-region";
+      rg.textContent = REGIONS[g.r];
+      m.append(nm, rg);
+      m.addEventListener("click", (e) => { e.stopPropagation(); goTo(g); });
+      matchesEl.appendChild(m);
+    });
+  }
+  function goTo(g) {
+    searchEl.value = "";
+    renderSearch();
+    const r = vp.getBoundingClientRect();
+    sc = 1.4;
+    tx = r.width / 2 - g.x * sc;
+    ty = r.height / 2 - g.y * sc;
+    openCard(g);
+    apply(true);
+  }
+  searchEl.addEventListener("input", renderSearch);
+  searchEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && matches.length) { e.preventDefault(); goTo(matches[0]); }
+  });
+  window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === "f" || e.key === "F")) { e.preventDefault(); searchEl.focus(); searchEl.select(); return; }
+    if (e.key === "Escape") { closeCard(); searchEl.value = ""; renderSearch(); }
+  });
+
+  // ---------- boot ----------
+  fit();
+  setTimeout(() => introEl.classList.add("hidden"), 2100);
+})();

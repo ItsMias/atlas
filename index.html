@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SurDex — Game Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <div id="viewport">
+    <div id="world">
+      <svg width="1800" height="1620" viewBox="0 0 1800 1620" class="venn" aria-hidden="true">
+        <defs>
+          <clipPath id="vzA"><circle cx="660" cy="590" r="520"></circle></clipPath>
+          <clipPath id="vzB"><circle cx="1140" cy="590" r="520"></circle></clipPath>
+          <clipPath id="vzC"><circle cx="900" cy="1000" r="520"></circle></clipPath>
+          <mask id="vmA"><circle cx="660" cy="590" r="520" fill="#fff"></circle><circle cx="1140" cy="590" r="520" fill="#000"></circle><circle cx="900" cy="1000" r="520" fill="#000"></circle></mask>
+          <mask id="vmB"><circle cx="1140" cy="590" r="520" fill="#fff"></circle><circle cx="660" cy="590" r="520" fill="#000"></circle><circle cx="900" cy="1000" r="520" fill="#000"></circle></mask>
+          <mask id="vmC"><circle cx="900" cy="1000" r="520" fill="#fff"></circle><circle cx="660" cy="590" r="520" fill="#000"></circle><circle cx="1140" cy="590" r="520" fill="#000"></circle></mask>
+          <mask id="vmAB"><g clip-path="url(#vzA)"><circle cx="1140" cy="590" r="520" fill="#fff"></circle><circle cx="900" cy="1000" r="520" fill="#000"></circle></g></mask>
+          <mask id="vmAC"><g clip-path="url(#vzA)"><circle cx="900" cy="1000" r="520" fill="#fff"></circle><circle cx="1140" cy="590" r="520" fill="#000"></circle></g></mask>
+          <mask id="vmBC"><g clip-path="url(#vzB)"><circle cx="900" cy="1000" r="520" fill="#fff"></circle><circle cx="660" cy="590" r="520" fill="#000"></circle></g></mask>
+          <mask id="vmABC"><g clip-path="url(#vzA)"><g clip-path="url(#vzB)"><circle cx="900" cy="1000" r="520" fill="#fff"></circle></g></g></mask>
+        </defs>
+        <g class="venn-tint">
+          <rect width="1800" height="1620" fill="#e05863" fill-opacity="0.22" mask="url(#vmA)"></rect>
+          <rect width="1800" height="1620" fill="#5a75ec" fill-opacity="0.22" mask="url(#vmB)"></rect>
+          <rect width="1800" height="1620" fill="#72f45f" fill-opacity="0.22" mask="url(#vmC)"></rect>
+          <rect width="1800" height="1620" fill="#d47dfd" fill-opacity="0.22" mask="url(#vmAB)"></rect>
+          <rect width="1800" height="1620" fill="#f6ec55" fill-opacity="0.22" mask="url(#vmAC)"></rect>
+          <rect width="1800" height="1620" fill="#4cf1f4" fill-opacity="0.22" mask="url(#vmBC)"></rect>
+          <rect width="1800" height="1620" fill="#e9eced" fill-opacity="0.22" mask="url(#vmABC)"></rect>
+        </g>
+        <path d="M 900 128.7 A 520 520 0 0 1 1179.21 561.32" fill="none" stroke="#d47dfd" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 1179.21 561.32 A 520 520 0 0 1 900 1051.3" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 900 1051.3 A 520 520 0 0 1 380.79 1028.68" fill="none" stroke="#f6ec55" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 380.79 1028.68 A 520 520 0 0 1 900 128.7" fill="none" stroke="#e05863" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 620.79 561.32 A 520 520 0 0 1 900 128.7" fill="none" stroke="#d47dfd" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 900 128.7 A 520 520 0 0 1 1419.21 1028.68" fill="none" stroke="#5a75ec" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 1419.21 1028.68 A 520 520 0 0 1 900 1051.3" fill="none" stroke="#4cf1f4" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 900 1051.3 A 520 520 0 0 1 620.79 561.32" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 620.79 561.32 A 520 520 0 0 1 1179.21 561.32" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 1179.21 561.32 A 520 520 0 0 1 1419.21 1028.68" fill="none" stroke="#4cf1f4" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 1419.21 1028.68 A 520 520 0 0 1 380.79 1028.68" fill="none" stroke="#72f45f" stroke-width="3.5" stroke-linecap="round"></path>
+        <path d="M 380.79 1028.68 A 520 520 0 0 1 620.79 561.32" fill="none" stroke="#f6ec55" stroke-width="3.5" stroke-linecap="round"></path>
+      </svg>
+      <div class="region-label micro">
+        <div class="region-name">MICRO</div>
+        <div class="region-desc">execution · aim, timing, muscle memory</div>
+      </div>
+      <div class="region-label macro">
+        <div class="region-name">MACRO</div>
+        <div class="region-desc">systems · strategy, routing, optimal play</div>
+      </div>
+      <div class="region-label meso">
+        <div class="region-name">MESO</div>
+        <div class="region-desc">mind games · reads, probability, hidden information</div>
+      </div>
+      <div id="icons"></div>
+      <div id="dim" hidden></div>
+      <div id="card-mount"></div>
+    </div>
+  </div>
+  <header>
+    <div class="brand">SurDex</div>
+    <div class="search-wrap">
+      <input type="text" id="search" placeholder="find a game" spellcheck="false" autocomplete="off">
+      <div id="matches" hidden></div>
+    </div>
+  </header>
+  <div id="intro">
+    <div class="intro-pivot">
+      <div class="intro-ring"></div>
+      <div class="intro-ring"></div>
+      <div class="intro-ring"></div>
+    </div>
+  </div>
+</div>
+<script src="games.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
