@@ -26,14 +26,14 @@ a:hover { color: var(--ink); }
 .venn { position: absolute; left: 0; top: 0; pointer-events: none; }
 
 .region-label { position: absolute; cursor: default; }
-.region-label.micro { left: 120px; top: 8px; }
-.region-label.macro { right: 120px; top: 8px; text-align: right; }
+.region-label.micro { left: 120px; top: -18px; }
+.region-label.macro { right: 120px; top: -18px; text-align: right; }
 .region-label.meso { left: 0; top: 1544px; width: 100%; text-align: center; }
-.region-name { font-size: 30px; font-weight: 800; letter-spacing: 0.16em; }
+.region-name { font-size: 44px; font-weight: 800; letter-spacing: 0.16em; }
 .micro .region-name { color: var(--a1); }
 .macro .region-name { color: var(--a2); }
 .meso .region-name { color: var(--a3); }
-.region-desc { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+.region-desc { font-family: 'IBM Plex Mono', monospace; font-size: 17px; color: var(--ink2); margin-top: 6px; }
 
 .icon {
   position: absolute; width: var(--icon-px); height: var(--icon-px);
