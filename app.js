@@ -205,10 +205,7 @@
     const meta = document.createElement("div");
     meta.className = "card-meta";
     meta.textContent = g.yr + " \u00b7 " + REGIONS[g.r];
-    const desc = document.createElement("div");
-    desc.className = "card-desc";
-    desc.textContent = g.t;
-    body.append(row, meta, desc);
+    body.append(row, meta);
     if (api) {
       if (api.description) {
         const ad = document.createElement("div");

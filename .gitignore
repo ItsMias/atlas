@@ -2,8 +2,6 @@
 README.md
 MMM.png
 .env
-
-# RAWG fetch tooling — only data/games-api.js is needed by the site itself
 /scripts
 /data/games-api.json
 /data/fetch-report.md
